@@ -87,7 +87,6 @@ for file in glob.glob("*.txt"):
             for name, updated_rating in group.items():
                 ratings[name] = updated_rating
 
-default_rating = Rating()
 final_rankings = collections.OrderedDict({name: rating for name, rating in sorted(ratings.items(), key=lambda item: -gxe(item[1]))})
 print("\nFinal rankings:")
 ranking = 0
