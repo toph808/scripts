@@ -1,8 +1,10 @@
-from trueskill import Rating, rate, rate_1vs1, setup
+from trueskill import Rating, rate, rate_1vs1, setup, global_env
 from pprint import pprint as pp
 import glob
 import os
 import collections
+import itertools
+import math
 
 # Results are of the format:
 # 1: Toph (3)
@@ -44,6 +46,18 @@ import collections
 # print(sbelmont)
 
 
+def win_probability(team1, team2):
+    delta_mu = sum(r.mu for r in team1) - sum(r.mu for r in team2)
+    sum_sigma = sum(r.sigma ** 2 for r in itertools.chain(team1, team2))
+    size = len(team1) + len(team2)
+    ts = global_env()
+    denom = math.sqrt(size * (ts.beta * ts.beta) + sum_sigma)
+    return ts.cdf(delta_mu / denom)
+
+def gxe(player_rating):
+    default_rating = Rating()
+    return win_probability([player_rating], [default_rating])
+
 setup(draw_probability=0)
 ratings = {}
 os.chdir("C:\\Users\\Toph\\Dropbox\\TOPH_PACKAGE\\Ranked AMQ\Season 1")
@@ -73,11 +87,10 @@ for file in glob.glob("*.txt"):
             for name, updated_rating in group.items():
                 ratings[name] = updated_rating
 
-    # pp(ratings)
-
-final_rankings = collections.OrderedDict({name: rating for name, rating in sorted(ratings.items(), key=lambda item: -item[1].mu)})
+default_rating = Rating()
+final_rankings = collections.OrderedDict({name: rating for name, rating in sorted(ratings.items(), key=lambda item: -gxe(item[1]))})
 print("\nFinal rankings:")
 ranking = 0
 for name, rating in final_rankings.items():
     ranking += 1
-    print("%s: %s (Rating: %.3f, Uncertainty: %.3f)" % (ranking, name, rating.mu, rating.sigma))
+    print("%s: %s (rating: %.3f, uncertainty: %.3f)" % (ranking, name, rating.mu, rating.sigma))
